@@ -1,46 +1,8 @@
 {
     "channels": [
-        "test_channel_1",
-        "test_channel_2",
-        "test_channel_3",
-        "test_channel_4",
-        "test_channel_5"
     ],
     "videos": [
         [
-            {
-                "title": "Mr. Waiting-for-Food",
-                "upload_date": "20240425",
-                "download_date": "2024-04-30"
-            }
-        ],
-        [
-            {
-                "title": "Mr. Waiting-for-Food",
-                "upload_date": "20240425",
-                "download_date": "2024-04-30"
-            }
-        ],
-        [
-            {
-                "title": "Mr. Waiting-for-Food",
-                "upload_date": "20240425",
-                "download_date": "2024-04-30"
-            }
-        ],
-        [
-            {
-                "title": "Mr. Waiting-for-Food",
-                "upload_date": "20240425",
-                "download_date": "2024-04-30"
-            }
-        ],
-        [
-            {
-                "title": "Mr. Waiting-for-Food",
-                "upload_date": "20240425",
-                "download_date": "2024-04-30"
-            }
         ]
     ]
 }

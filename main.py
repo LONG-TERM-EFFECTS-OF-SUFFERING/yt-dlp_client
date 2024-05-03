@@ -41,13 +41,22 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 		"upload_date": upload_date,
 		"download_date": datetime.now().strftime("%Y-%m-%d")
 	}
-
+	
 	if is_from_new_channel:
 		downloaded_channels.append(channel_name)
 		downloaded_videos.append([])
 		channel_downloaded_index = len(downloaded_channels) - 1
 	else:
 		channel_downloaded_index = downloaded_channels.index(channel_name)
+		
+	# if is_from_new_channel:
+	# 	downloaded_channels.append(channel_name)
+	# 	downloaded_videos.append([video])  # Crea una lista con el primer video
+	# 	channel_downloaded_index = len(downloaded_channels) - 1
+	# else:
+	# 	channel_downloaded_index = downloaded_channels.index(channel_name)
+	# 	if not isinstance(downloaded_videos[channel_downloaded_index], list):
+	# 		downloaded_videos[channel_downloaded_index] = []  # Si no es una lista, crea una
 
 	downloaded_videos[channel_downloaded_index].append(video)
 
@@ -61,7 +70,8 @@ def download_video(url: str) -> None:
 	Returns:
 		None
 	"""
-	executable = "G:\\yt-dlp\\yt-dlp.exe"
+	# executable = "G:\\yt-dlp\\yt-dlp.exe"
+	executable = "yt-dlp"
 
 	is_from_new_channel = False
 	video_information = json.loads(os.popen(f"{executable} --no-warnings --dump-json \"{url}\"").read())
@@ -69,7 +79,8 @@ def download_video(url: str) -> None:
 	title = video_information["title"]
 	upload_date = video_information["upload_date"]
 
-	path = f"downloads/{channel.replace(" ", "_")}"
+	aux = {channel.replace(" ", "_")}
+	path = f"downloads/{aux}"
 
 	if not channel in downloaded_channels: # os.path.exists(path)
 		is_from_new_channel = True

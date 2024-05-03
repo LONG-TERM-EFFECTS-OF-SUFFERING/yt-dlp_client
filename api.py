@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import subprocess
 import json
+from channels_id import obtener_ids_canales
 
 # Carga las variables de entorno desde el archivo .env
 load_dotenv()
@@ -13,8 +14,20 @@ api_key = os.getenv("YOUTUBE_API_KEY")
 # Crear un servicio de la API de YouTube
 youtube = build("youtube", "v3", developerKey=api_key)
 
+# Lista de URLs de canales de YouTube
+urls_canales = [
+    "https://www.youtube.com/@Kassiapiano",
+    "https://www.youtube.com/@Rousseau",
+    "https://www.youtube.com/@Lord_Vinheteiro",
+	"https://www.youtube.com/@claramxx",
+	"https://www.youtube.com/@vangroovehoven"
+    # Agrega más URLs de canales aquí
+]
+
 # Obtener los IDs de los canales
-channel_ids = ["UCPmCaKjzYF3pXYLfaRhacwA", "UCPZUQqtVDmcjm4NY5FkzqLA", "UCuJZfTHsMILxdb_XBQzaeQg", "UCLafIQZHZ4XxuOxK5ah6A9w", "UCSE6yilNScIz1SLTNQvrXMw"]
+channel_ids = obtener_ids_canales(urls_canales)
+
+# channel_ids = ["UCPmCaKjzYF3pXYLfaRhacwA", "UCPZUQqtVDmcjm4NY5FkzqLA", "UCuJZfTHsMILxdb_XBQzaeQg", "UCLafIQZHZ4XxuOxK5ah6A9w", "UCSE6yilNScIz1SLTNQvrXMw"]
 
 # Lista para almacenar las URL de los videos
 video_urls = []

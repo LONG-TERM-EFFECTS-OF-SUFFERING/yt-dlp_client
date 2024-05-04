@@ -102,7 +102,7 @@ def download_video(url: str) -> None:
 	title = video_information["title"]
 	upload_date = video_information["upload_date"]
 
-	channel_folder_name = {channel.replace(" ", "_")}
+	channel_folder_name = channel.replace(" ", "_")
 	path = f"downloads/{channel_folder_name}"
 
 	if not channel in downloaded_channels: # os.path.exists(path)
@@ -118,7 +118,10 @@ def download_video(url: str) -> None:
 
 def main():
 	for channel in to_download_channels:
-		to_download_videos.apped(get_latest_videos(channel))
+		to_download_videos.extend(get_latest_videos(channel))
+
+	for video_url in to_download_videos:
+		download_video(video_url)
 
 	new_content = {
 		"channels": downloaded_channels,

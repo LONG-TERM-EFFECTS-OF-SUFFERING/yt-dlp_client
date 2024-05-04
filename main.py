@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 
-
 def load_json_file(file_name: str) -> dict:
 	"""
 	Load a JSON file and return its content as a dictionary.
@@ -41,7 +40,7 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 		"upload_date": upload_date,
 		"download_date": datetime.now().strftime("%Y-%m-%d")
 	}
-
+	
 	if is_from_new_channel:
 		downloaded_channels.append(channel_name)
 		downloaded_videos.append([])
@@ -49,7 +48,8 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 	else:
 		channel_downloaded_index = downloaded_channels.index(channel_name)
 
-	downloaded_videos[channel_downloaded_index].append(video)
+	# downloaded_videos[channel_downloaded_index].append(video)
+	downloaded_videos.append(video)
 
 def download_video(url: str) -> None:
 	"""
@@ -61,6 +61,7 @@ def download_video(url: str) -> None:
 	Returns:
 		None
 	"""
+	# executable = "G:\\yt-dlp\\yt-dlp.exe"
 	executable = "yt-dlp"
 
 	is_from_new_channel = False
@@ -69,7 +70,8 @@ def download_video(url: str) -> None:
 	title = video_information["title"]
 	upload_date = video_information["upload_date"]
 
-	path = f"downloads/{channel.replace(" ", "_")}"
+	aux = {channel.replace(" ", "_")}
+	path = f"downloads/{aux}"
 
 	if not channel in downloaded_channels: # os.path.exists(path)
 		is_from_new_channel = True

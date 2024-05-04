@@ -22,6 +22,6 @@ This project aims to automate the process of downloading videos from YouTube usi
 
 2. Clone this repository: `git clone https://github.com/LONG-TERM-EFFECTS-OF-SUFFERING/yt-dlp_client.git`.
 
-3. Define the channels and videos you want to download in the `to_download.json`.
+3. Define the channels from which you want to download the last five videos in the `to_download.json` file.
 
-4. Run the script: `python main.py`.
+4. Run any version of the program: `python <multiprocess.py, multithreading.py or squential.py>`.

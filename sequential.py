@@ -7,7 +7,7 @@ import timeit
 class NoVideosFoundError(Exception):
 	pass
 
-yt_dlp_executable = "G:\\yt-dlp\\yt-dlp.exe"
+yt_dlp_executable = "yt-dlp"
 
 # ---------------------------------------------------------------------------- #
 

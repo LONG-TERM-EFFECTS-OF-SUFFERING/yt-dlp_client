@@ -4,24 +4,64 @@ from datetime import datetime
 from multiprocessing import Pool, Lock
 import timeit
 
+
+class NoVideosFoundError(Exception):
+	pass
+
+yt_dlp_executable = "yt-dlp"
+
+# ---------------------------------------------------------------------------- #
+
 def load_json_file(file_name: str) -> dict:
-    """
-    Load a JSON file and return its content as a dictionary.
+	"""
+	Load a JSON file and return its content as a dictionary.
 
-    Args:
-        file_name (str): the name of the JSON file to load.
+	Args:
+		file_name (str): the name of the JSON file to load.
 
-    Returns:
-        dict: the content of the JSON file as a dictionary.
-    """
-    with open(file_name, 'r') as file:
-        file_content = json.load(file)
-        return file_content
+	Returns:
+		dict: the content of the JSON file as a dictionary.
+	"""
+	with open(file_name, 'r') as file:
+		file_content = json.load(file)
+		return file_content
+
 
 (downloaded_channels, downloaded_videos) = (load_json_file("downloaded.json")["channels"], load_json_file("downloaded.json")["videos"])
-to_download_videos = load_json_file("to_download.json")["videos"]
+to_download_channels = load_json_file("to_download.json")["channels"]
+to_download_videos = []
+NUM_THREADS = 8
 lock = Lock() # Create a lock for synchronization
+
 # ---------------------------------------------------------------------------- #
+
+def get_latest_videos(channel_url: str) -> list[str]:
+    """
+    Get the last five videos URL of a YouTube channel.
+
+    Args:
+        channel_url (str): the YouTube channel you want to get the last
+            five videos URl.
+
+    Returns:
+        list[str]: the last five videos URL.
+    """
+    videos = []
+
+    try:
+        
+        command = f"{yt_dlp_executable} --no-warnings --get-id --skip-download --max-downloads 5 \"{channel_url}\""
+        video_ids = os.popen(command).read().split()
+
+        if not video_ids:
+            raise NoVideosFoundError("no videos found")
+        else:
+            for video_id in video_ids:
+                videos.append(f"https://www.youtube.com/watch?v={video_id}")
+    except NoVideosFoundError as e:
+        print(f"Error: {e}")
+
+    return videos
 
 def register_video(is_from_new_channel: bool, channel_name: str, video_title: str, upload_date: str) -> None:
     """
@@ -63,34 +103,47 @@ def download_video(url: str) -> None:
     Returns:
         None
     """
-    # executable = "G:\\yt-dlp\\yt-dlp.exe"
-    executable = "yt-dlp"
+    
+    # Ejecuta yt-dlp para obtener información sobre el video
+    command_output = os.popen(f"{yt_dlp_executable} --no-warnings --dump-json \"{url}\"").read()
 
-    is_from_new_channel = False
-    video_information = json.loads(os.popen(f"{executable} --no-warnings --dump-json \"{url}\"").read())
-    channel = video_information["channel"]
-    title = video_information["title"]
-    upload_date = video_information["upload_date"]
+    if command_output.strip():
+        try:
+            is_from_new_channel = False
+            video_information = json.loads(command_output)
+            channel = video_information["channel"]
+            title = video_information["title"]
+            upload_date = video_information["upload_date"]
 
-    aux = {channel.replace(" ", "_")}
-    path = f"downloads/{aux}"
+            channel_folder_name = channel.replace(" ", "_")
+            path = f"downloads/{channel_folder_name}"
 
-    if not os.path.exists(path):  # Check if directory exists before creating
-        with lock:  # Use lock to ensure synchronization
-            os.makedirs(path)
-        is_from_new_channel = True
+            if not os.path.exists(path):  # Check if directory exists before creating
+                with lock:  # Use lock to ensure synchronization
+                    os.makedirs(path)
+                is_from_new_channel = True
 
-    file_name = f"{title}-{upload_date}"
-    os.popen(f"{executable} -o \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
+            file_name = f"{title}-{upload_date}"
+            os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
 
-    register_video(is_from_new_channel, channel, title, upload_date)
+            register_video(is_from_new_channel, channel, title, upload_date)
+            
+        except json.decoder.JSONDecodeError:
+            print(f"Error: No se pudo decodificar la salida JSON para la URL: {url}")
+        except Exception as e:
+            print(f"Error desconocido al procesar la URL {url}: {e}")
 
 # ---------------------------------------------------------------------------- #
 
 def main():
-    
-    NUM_THREADS = 8
 
+    with Pool(processes=NUM_THREADS) as pool:
+        # Paraleliza la llamada a get_latest_videos
+        results = pool.map(get_latest_videos, to_download_channels)
+    
+    for result in results:
+        to_download_videos.extend(result)
+  
     with Pool(processes=NUM_THREADS) as pool:
         pool.map(download_video, to_download_videos)
 
@@ -103,7 +156,7 @@ def main():
         json.dump(new_content, file, indent=4)
 
     new_content = {
-        "videos": []
+        "channels": []
     }
 
     with open("to_download.json", "w") as file:
@@ -114,5 +167,12 @@ if __name__ == "__main__":
     start = timeit.default_timer()
     main()
     end = timeit.default_timer()
- 
     print(f"Tiempo de ejecución con multiprocessing : {end - start}")
+
+
+
+# "https://www.youtube.com/@Kassiapiano",
+# "https://www.youtube.com/@Rousseau",
+# "https://www.youtube.com/@Lord_Vinheteiro",
+# "https://www.youtube.com/@claramxx",
+# "https://www.youtube.com/@vangroovehoven"

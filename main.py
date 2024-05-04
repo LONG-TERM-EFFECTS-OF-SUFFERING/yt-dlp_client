@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 
-
 def load_json_file(file_name: str) -> dict:
 	"""
 	Load a JSON file and return its content as a dictionary.
@@ -48,17 +47,9 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 		channel_downloaded_index = len(downloaded_channels) - 1
 	else:
 		channel_downloaded_index = downloaded_channels.index(channel_name)
-		
-	# if is_from_new_channel:
-	# 	downloaded_channels.append(channel_name)
-	# 	downloaded_videos.append([video])  # Crea una lista con el primer video
-	# 	channel_downloaded_index = len(downloaded_channels) - 1
-	# else:
-	# 	channel_downloaded_index = downloaded_channels.index(channel_name)
-	# 	if not isinstance(downloaded_videos[channel_downloaded_index], list):
-	# 		downloaded_videos[channel_downloaded_index] = []  # Si no es una lista, crea una
 
-	downloaded_videos[channel_downloaded_index].append(video)
+	# downloaded_videos[channel_downloaded_index].append(video)
+	downloaded_videos.append(video)
 
 def download_video(url: str) -> None:
 	"""

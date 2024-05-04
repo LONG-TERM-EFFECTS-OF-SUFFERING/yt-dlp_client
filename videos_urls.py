@@ -41,7 +41,7 @@ def main():
         print("El proceso se ha completado satisfactoriamente. Se extrajeron los enlaces correspondientes.")
 
         # Ejecutar main.py si todo sale bien
-        os.system("python main.py")
+        os.system("python multiprocess.py")
 
     except Exception as e:
         print(f"Ocurrió un error durante el proceso: {e}")

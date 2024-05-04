@@ -1,11 +1,7 @@
 import json
 import os
-import concurrent.futures
-import threading
 from datetime import datetime
-
-NUM_THREADS = 16
-lock = threading.Lock()
+from multiprocessing import Pool
 
 def load_json_file(file_name: str) -> dict:
 	"""
@@ -24,7 +20,7 @@ def load_json_file(file_name: str) -> dict:
 
 (downloaded_channels, downloaded_videos) = (load_json_file("downloaded.json")["channels"], load_json_file("downloaded.json")["videos"])
 to_download_videos = load_json_file("to_download.json")["videos"]
-
+channel_names = []
 # ---------------------------------------------------------------------------- #
 
 def register_video(is_from_new_channel: bool, channel_name: str, video_title: str, upload_date: str) -> None:
@@ -41,20 +37,20 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 		None
 	"""
 	video = {
-			"title": video_title,
-			"upload_date": upload_date,
-			"download_date": datetime.now().strftime("%Y-%m-%d")
+		"title": video_title,
+		"upload_date": upload_date,
+		"download_date": datetime.now().strftime("%Y-%m-%d")
 	}
+	
+	if is_from_new_channel:
+		downloaded_channels.append(channel_name)
+		downloaded_videos.append([])
+		channel_downloaded_index = len(downloaded_channels) - 1
+	else:
+		channel_downloaded_index = downloaded_channels.index(channel_name)
 
-	with lock:
-		if is_from_new_channel:
-			downloaded_channels.append(channel_name)
-			downloaded_videos.append([])
-			channel_downloaded_index = len(downloaded_channels) - 1
-		else:
-			channel_downloaded_index = downloaded_channels.index(channel_name)
-
-		downloaded_videos.append(video)
+	# downloaded_videos[channel_downloaded_index].append(video)
+	downloaded_videos.append(video)
 
 def download_video(url: str) -> None:
 	"""
@@ -66,6 +62,7 @@ def download_video(url: str) -> None:
 	Returns:
 		None
 	"""
+	# executable = "G:\\yt-dlp\\yt-dlp.exe"
 	executable = "yt-dlp"
 
 	is_from_new_channel = False
@@ -74,10 +71,12 @@ def download_video(url: str) -> None:
 	title = video_information["title"]
 	upload_date = video_information["upload_date"]
 
-	path = f"downloads/{channel.replace(" ", "_")}"
+	aux = {channel.replace(" ", "_")}
+	path = f"downloads/{aux}"
 
-	if not channel in downloaded_channels: # os.path.exists(path)
+	if not channel in channel_names: 
 		is_from_new_channel = True
+		channel_names.append(channel)
 		os.makedirs(path)
 
 	file_name = f"{title}-{upload_date}"
@@ -88,14 +87,10 @@ def download_video(url: str) -> None:
 # ---------------------------------------------------------------------------- #
 
 def main():
+	NUM_THREADS = 4
 
-	with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
-		futures = []
-
-		for video_url in to_download_videos:
-			futures.append(executor.submit(download_video, video_url))
-
-		concurrent.futures.wait(futures)
+	with Pool(processes=NUM_THREADS) as pool:
+		pool.map(download_video, to_download_videos)
 
 	new_content = {
 		"channels": downloaded_channels,
@@ -111,6 +106,7 @@ def main():
 
 	with open("to_download.json", "w") as file:
 		json.dump(new_content, file, indent=4)
+
 
 if __name__ == "__main__":
 	main()

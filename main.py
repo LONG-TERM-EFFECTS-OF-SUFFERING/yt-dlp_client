@@ -61,7 +61,6 @@ def download_video(url: str) -> None:
 	Returns:
 		None
 	"""
-	# executable = "G:\\yt-dlp\\yt-dlp.exe"
 	executable = "yt-dlp"
 
 	is_from_new_channel = False

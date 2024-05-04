@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+import timeit
 
 def load_json_file(file_name: str) -> dict:
 	"""
@@ -49,7 +50,7 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 		channel_downloaded_index = downloaded_channels.index(channel_name)
 
 	# downloaded_videos[channel_downloaded_index].append(video)
-	downloaded_videos.append(video)
+	downloaded_videos[channel_downloaded_index] = video
 
 def download_video(url: str) -> None:
 	"""
@@ -103,4 +104,7 @@ def main():
 		json.dump(new_content, file, indent=4)
 
 if __name__ == "__main__":
-	main()
+    start = timeit.default_timer()
+    main()
+    end = timeit.default_timer()
+    print(f"Tiempo de ejecución secuencial : {end - start}")

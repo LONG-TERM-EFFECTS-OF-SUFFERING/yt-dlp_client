@@ -3,6 +3,14 @@ import os
 from datetime import datetime
 import timeit
 
+
+class NoVideosFoundError(Exception):
+	pass
+
+yt_dlp_executable = "G:\\yt-dlp\\yt-dlp.exe"
+
+# ---------------------------------------------------------------------------- #
+
 def load_json_file(file_name: str) -> dict:
 	"""
 	Load a JSON file and return its content as a dictionary.
@@ -19,9 +27,37 @@ def load_json_file(file_name: str) -> dict:
 
 
 (downloaded_channels, downloaded_videos) = (load_json_file("downloaded.json")["channels"], load_json_file("downloaded.json")["videos"])
-to_download_videos = load_json_file("to_download.json")["videos"]
+to_download_channels = load_json_file("to_download.json")["channels"]
+to_download_videos = []
 
 # ---------------------------------------------------------------------------- #
+
+def get_latest_videos(channel_url: str) -> list[str]:
+	"""
+	Get the last five videos URL of a YouTube channel.
+
+	Args:
+		channel_url (str): the YouTube channel you want to get the last
+			five videos URl.
+
+	Returns:
+		list[str]: the last five videos URL.
+	"""
+	videos = []
+
+	try:
+		command = f"{yt_dlp_executable} --no-warnings --get-id --skip-download --max-downloads 5 \"{channel_url}\""
+		video_ids = os.popen(command).read().split()
+
+		if not video_ids:
+			raise NoVideosFoundError("no videos found")
+		else:
+			for video_id in video_ids:
+				videos.append(f"https://www.youtube.com/watch?v={video_id}")
+	except NoVideosFoundError as e:
+		print(f"Error: {e}")
+
+	return videos
 
 def register_video(is_from_new_channel: bool, channel_name: str, video_title: str, upload_date: str) -> None:
 	"""
@@ -41,7 +77,7 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 		"upload_date": upload_date,
 		"download_date": datetime.now().strftime("%Y-%m-%d")
 	}
-	
+
 	if is_from_new_channel:
 		downloaded_channels.append(channel_name)
 		downloaded_videos.append([])
@@ -49,8 +85,7 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
 	else:
 		channel_downloaded_index = downloaded_channels.index(channel_name)
 
-	# downloaded_videos[channel_downloaded_index].append(video)
-	downloaded_videos[channel_downloaded_index] = video
+	downloaded_videos[channel_downloaded_index].append(video)
 
 def download_video(url: str) -> None:
 	"""
@@ -62,31 +97,29 @@ def download_video(url: str) -> None:
 	Returns:
 		None
 	"""
-	executable = "yt-dlp"
-
 	is_from_new_channel = False
-	video_information = json.loads(os.popen(f"{executable} --no-warnings --dump-json \"{url}\"").read())
+	video_information = json.loads(os.popen(f"{yt_dlp_executable} --no-warnings --dump-json \"{url}\"").read())
 	channel = video_information["channel"]
 	title = video_information["title"]
 	upload_date = video_information["upload_date"]
 
-	aux = {channel.replace(" ", "_")}
-	path = f"downloads/{aux}"
+	channel_folder_name = {channel.replace(" ", "_")}
+	path = f"downloads/{channel_folder_name}"
 
 	if not channel in downloaded_channels: # os.path.exists(path)
 		is_from_new_channel = True
 		os.makedirs(path)
 
 	file_name = f"{title}-{upload_date}"
-	os.popen(f"{executable} -o \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
+	os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
 
 	register_video(is_from_new_channel, channel, title, upload_date)
 
 # ---------------------------------------------------------------------------- #
 
 def main():
-	for video_url in to_download_videos:
-		download_video(video_url)
+	for channel in to_download_channels:
+		to_download_videos.apped(get_latest_videos(channel))
 
 	new_content = {
 		"channels": downloaded_channels,
@@ -97,11 +130,12 @@ def main():
 		json.dump(new_content, file, indent=4)
 
 	new_content = {
-		"videos": []
+		"channels": []
 	}
 
 	with open("to_download.json", "w") as file:
 		json.dump(new_content, file, indent=4)
+
 
 if __name__ == "__main__":
     start = timeit.default_timer()

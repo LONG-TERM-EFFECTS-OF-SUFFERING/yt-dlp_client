@@ -30,7 +30,7 @@ def load_json_file(file_name: str) -> dict:
 (downloaded_channels, downloaded_videos) = (load_json_file("downloaded.json")["channels"], load_json_file("downloaded.json")["videos"])
 to_download_channels = load_json_file("to_download.json")["channels"]
 to_download_videos = []
-NUM_THREADS = 8
+NUM_THREADS = 4
 lock = Lock() # Create a lock for synchronization
 
 # ---------------------------------------------------------------------------- #
@@ -136,16 +136,21 @@ def download_video(url: str) -> None:
 # ---------------------------------------------------------------------------- #
 
 def main():
-
+    start1 = timeit.default_timer()
     with Pool(processes=NUM_THREADS) as pool:
         # Paraleliza la llamada a get_latest_videos
         results = pool.map(get_latest_videos, to_download_channels)
-    
+    end1 = timeit.default_timer()
+    print(f"Tiempo de ejecución con multiprocessing first part: {end1 - start1}")
+
     for result in results:
         to_download_videos.extend(result)
-  
+    
+    start2 = timeit.default_timer()
     with Pool(processes=NUM_THREADS) as pool:
         pool.map(download_video, to_download_videos)
+    end2 = timeit.default_timer()
+    print(f"Tiempo de ejecución con multiprocessing second part: {end2 - start2}")
 
     new_content = {
         "channels": downloaded_channels,
@@ -167,12 +172,20 @@ if __name__ == "__main__":
     start = timeit.default_timer()
     main()
     end = timeit.default_timer()
-    print(f"Tiempo de ejecución con multiprocessing : {end - start}")
+    print(f"Tiempo de ejecución con multiprocessing full program: {end - start}")
 
 
-
+# Videos Largos
 # "https://www.youtube.com/@Kassiapiano",
 # "https://www.youtube.com/@Rousseau",
 # "https://www.youtube.com/@Lord_Vinheteiro",
 # "https://www.youtube.com/@claramxx",
-# "https://www.youtube.com/@vangroovehoven"
+# "https://www.youtube.com/@vangroovehoven",
+
+# Videos Cortos
+# "https://www.youtube.com/@AgenteConfusion"
+# "https://www.youtube.com/@memeshub8452",
+# "https://www.youtube.com/@SiHayCine",
+# "https://www.youtube.com/@AdamEschborn",
+# "https://www.youtube.com/@JoeJWalker",
+# "https://www.youtube.com/@WarnerBrosPictures"

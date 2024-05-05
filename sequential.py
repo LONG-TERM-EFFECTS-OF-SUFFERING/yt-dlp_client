@@ -141,7 +141,7 @@ def main():
 
 
 if __name__ == "__main__":
-    start = timeit.default_timer()
+    # start = timeit.default_timer()
     main()
-    end = timeit.default_timer()
-    print(f"Tiempo de ejecución secuencial : {end - start}")
+    # end = timeit.default_timer()
+    # print(f"Tiempo de ejecución secuencial : {end - start}")

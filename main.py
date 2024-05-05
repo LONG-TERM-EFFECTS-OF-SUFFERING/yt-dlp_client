@@ -13,23 +13,36 @@ def clean_screen():
 		os.system('clear')
 
 def execute_and_time(function, name):
-    clean_screen()
-    print(f"You've chosen {name} option.")
-    start = timeit.default_timer()
-    function()
-    end = timeit.default_timer()
-    time_in_seconds = end - start
-    clean_screen()
-    print(f"Downloading of videos in {name} mode was completed. Elapsed time: {time_in_seconds:.2f} seconds.\n")
+		clean_screen()
+		print(f"You've chosen {name} option.")
+		start = timeit.default_timer()
+		function()
+		end = timeit.default_timer()
+		time_in_seconds = end - start
+		clean_screen()
+		print(f"Downloading of videos in {name} mode was completed. Elapsed time: {time_in_seconds:.2f} seconds.\n")
+
+def get_thread_count():
+		while True:
+			try:
+				count = int(input("Enter the number of threads (4, 8, 16): "))
+				if count in [4, 8, 16]:
+					return count
+				else:
+					print("Invalid input. Please enter 4, 8, or 16.")
+			except ValueError:
+				print("Invalid input. Please enter a number.")
 
 def sequentialOption():
-    execute_and_time(sequential.main, "Sequential")
+	execute_and_time(sequential.main, "Sequential")
 
 def multithreadingOption():
-    execute_and_time(multithreading.main, "Multithreading")
+	thread_count = get_thread_count()
+	execute_and_time(lambda: multithreading.main(thread_count), "Multithreading")
 
 def multiprocessingOption():
-    execute_and_time(multiprocess.main, "Multiprocessing")
+	process_count = get_thread_count()
+	execute_and_time(lambda: multiprocess.main(process_count), "Multiprocessing")
 
 def salir():
 	clean_screen()
@@ -57,4 +70,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+		main()
+
+# {
+# 	"channels": [
+# 		"https://www.youtube.com/@memeshub8452",
+# 		"https://www.youtube.com/@SiHayCine",
+# 		"https://www.youtube.com/@AdamEschborn",
+# 		"https://www.youtube.com/@JoeJWalker",
+# 		"https://www.youtube.com/@WarnerBrosPictures"
+# 	]
+# }

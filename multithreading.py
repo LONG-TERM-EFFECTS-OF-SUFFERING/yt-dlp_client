@@ -1,26 +1,18 @@
 import json
 import os
-import concurrent.futures
-import threading
 from datetime import datetime
 import timeit
-
-# ---------------------------------------------------------------------------- #
-
-NUM_THREADS = 4
-lock = threading.Lock()
-
-# ---------------------------------------------------------------------------- #
+import concurrent.futures
+import threading
 
 
 class NoVideosFoundError(Exception):
 	pass
 
-
 yt_dlp_executable = "yt-dlp"
+lock = threading.Lock()
 
 # ---------------------------------------------------------------------------- #
-
 
 def load_json_file(file_name: str) -> dict:
 	"""
@@ -32,27 +24,24 @@ def load_json_file(file_name: str) -> dict:
 	Returns:
 		dict: the content of the JSON file as a dictionary.
 	"""
-	with open(file_name, "r") as file:
+	with open(file_name, 'r') as file:
 		file_content = json.load(file)
 		return file_content
 
 
-(downloaded_channels, downloaded_videos) = (
-	load_json_file("downloaded.json")["channels"],
-	load_json_file("downloaded.json")["videos"],
-)
+(downloaded_channels, downloaded_videos) = (load_json_file("downloaded.json")["channels"], load_json_file("downloaded.json")["videos"])
 to_download_channels = load_json_file("to_download.json")["channels"]
 to_download_videos = []
 
 # ---------------------------------------------------------------------------- #
-
 
 def get_latest_videos(channel_url: str) -> list[str]:
 	"""
 	Get the last five videos URL of a YouTube channel.
 
 	Args:
-		channel_url (str): the YouTube channel you want to get the lastfive videos URl.
+		channel_url (str): the YouTube channel you want to get the last
+			five videos URl.
 
 	Returns:
 		list[str]: the last five videos URL.
@@ -60,7 +49,7 @@ def get_latest_videos(channel_url: str) -> list[str]:
 	videos = []
 
 	try:
-		command = f'{yt_dlp_executable} --no-warnings --get-id --skip-download --max-downloads 5 "{channel_url}"'
+		command = f"{yt_dlp_executable} --no-warnings --get-id --skip-download --max-downloads 5 \"{channel_url}\""
 		video_ids = os.popen(command).read().split()
 
 		if not video_ids:
@@ -73,13 +62,7 @@ def get_latest_videos(channel_url: str) -> list[str]:
 
 	return videos
 
-
-# ---------------------------------------------------------------------------- #
-
-
-def register_video(
-	is_from_new_channel: bool, channel_name: str, video_title: str, upload_date: str
-) -> None:
+def register_video(is_from_new_channel: bool, channel_name: str, video_title: str, upload_date: str) -> None:
 	"""
 	Registers a video in the system.
 
@@ -95,24 +78,19 @@ def register_video(
 	video = {
 		"title": video_title,
 		"upload_date": upload_date,
-		"download_date": datetime.now().strftime("%Y-%m-%d"),
+		"download_date": datetime.now().strftime("%Y-%m-%d")
 	}
 
-	try:
-		with lock:
+	with lock:
 			if is_from_new_channel:
-				downloaded_channels.append(channel_name)
-				downloaded_videos.append([])
-				channel_downloaded_index = len(downloaded_channels) - 1
+					if channel_name not in downloaded_channels:
+							downloaded_channels.append(channel_name)
+							downloaded_videos.append([])
+					channel_downloaded_index = downloaded_channels.index(channel_name)
 			else:
-				channel_downloaded_index = downloaded_channels.index(channel_name)
+					channel_downloaded_index = downloaded_channels.index(channel_name)
 
 			downloaded_videos[channel_downloaded_index].append(video)
-	except Exception as e:
-		print(f"Error registering video: {e}")
-
-
-# ---------------------------------------------------------------------------- #
 
 
 def download_video(url: str) -> None:
@@ -125,72 +103,63 @@ def download_video(url: str) -> None:
 	Returns:
 		None
 	"""
-	
-	# Ejecuta yt-dlp para obtener información sobre el video
-	command_output = os.popen(f"{yt_dlp_executable} --no-warnings --dump-json \"{url}\"").read()
+	is_from_new_channel = False
+	video_information = json.loads(os.popen(f"{yt_dlp_executable} --no-warnings --dump-json \"{url}\"").read())
+	channel = video_information["channel"]
+	title = video_information["title"]
+	upload_date = video_information["upload_date"]
 
-	if command_output.strip():
-		try:
-			is_from_new_channel = False
-			video_information = json.loads(command_output)
-			channel = video_information["channel"]
-			title = video_information["title"]
-			upload_date = video_information["upload_date"]
+	channel_folder_name = channel.replace(" ", "_")
+	path = f"downloads/{channel_folder_name}"
 
-			channel_folder_name = channel.replace(" ", "_")
-			path = f"downloads/{channel_folder_name}"
+	with lock:
+		if not channel in downloaded_channels: # os.path.exists(path)
+			is_from_new_channel = True
+			os.makedirs(path, exist_ok=True)
+  
+	file_name = f"{title}-{upload_date}"
+	os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
 
-			if not os.path.exists(path):  # Check if directory exists before creating
-				with lock:  # Use lock to ensure synchronization
-					os.makedirs(path)
-				is_from_new_channel = True
-
-			file_name = f"{title}-{upload_date}"
-			os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
-	
-			register_video(is_from_new_channel, channel, title, upload_date)
-
-		except json.decoder.JSONDecodeError:
-			print(f"Error: Could not decode the JSON output for the URL: {url}")
-		except Exception as e:
-			print(f"Unknown error processing URL {url}: {e}")
-
+	register_video(is_from_new_channel, channel, title, upload_date)
 
 # ---------------------------------------------------------------------------- #
 
-
-def main(NUM_THREADS_PARAMETER: int = 4):
-	with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_THREADS_PARAMETER) as executor:
-			results = list(executor.map(get_latest_videos, to_download_channels))
-
-	for result in results:
-			to_download_videos.extend(result)
+def main(NUM_MAX_WORKERS: int = 4):
+	start1 = timeit.default_timer()
+	with concurrent.futures.ThreadPoolExecutor(NUM_MAX_WORKERS) as executor:
+			futures = [executor.submit(get_latest_videos, channel) for channel in to_download_channels]
+			for future in futures:
+					to_download_videos.extend(future.result())
+	end1 = timeit.default_timer()
+	print(f"Time to get latest videos: {end1 - start1} seconds")
 
 	print(f"Lenght of to_download_videos: {len(to_download_videos)}")
 
-	contador = 0
+	start2 = timeit.default_timer()
+	with concurrent.futures.ThreadPoolExecutor(NUM_MAX_WORKERS) as executor:
+			futures = [executor.submit(download_video, url) for url in to_download_videos]
+			for future in futures:
+					future.result()
+	end2 = timeit.default_timer()
+	print(f"Time to download videos: {end2 - start2} seconds")
 
-	with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
-			futures = []
-
-			for video_url in to_download_videos:
-					futures.append(executor.submit(download_video, video_url))
-					contador += 1
-
-			concurrent.futures.wait(futures)
-
-	print(f"Number of videos downloaded: {contador}")
-	
-	new_content = {"channels": downloaded_channels, "videos": downloaded_videos}
+	new_content = {
+		"channels": downloaded_channels,
+		"videos": downloaded_videos
+	}
 
 	with open("downloaded.json", "w") as file:
 		json.dump(new_content, file, indent=4)
 
-	new_content = {"channels": []}
+	new_content = {
+		"channels": []
+	}
 
 	with open("to_download.json", "w") as file:
 		json.dump(new_content, file, indent=4)
 
 
 if __name__ == "__main__":
-	main()
+    # start = timeit.default_timer()
+    main()
+    # end = time

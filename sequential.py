@@ -108,7 +108,7 @@ def download_video(url: str) -> None:
 
 	if not channel in downloaded_channels: # os.path.exists(path)
 		is_from_new_channel = True
-		os.makedirs(path)
+		os.makedirs(path, exist_ok=True)
 
 	file_name = f"{title}-{upload_date}"
 	os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
@@ -118,11 +118,17 @@ def download_video(url: str) -> None:
 # ---------------------------------------------------------------------------- #
 
 def main():
+	start1 = timeit.default_timer()
 	for channel in to_download_channels:
 		to_download_videos.extend(get_latest_videos(channel))
+	end1 = timeit.default_timer()
+	print(f"Tiempo de ejecución de la descarga de videos: {end1 - start1}")
 
+	start2 = timeit.default_timer()
 	for video_url in to_download_videos:
 		download_video(video_url)
+	end2 = timeit.default_timer()
+	print(f"Tiempo de ejecución de la descarga de videos: {end2 - start2}")
 
 	new_content = {
 		"channels": downloaded_channels,

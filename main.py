@@ -57,9 +57,10 @@ def main():
 		opcion = input("Elige una opción: ")
 
 		if opcion in opciones:
-			opciones[opcion]()
 			if opcion == "4":
 				break
+			opciones[opcion]()
+			break
 		else:
 			clean_screen()
 			print("Opción inválida. Por favor, elige una opción entre 1 y 4.\n")

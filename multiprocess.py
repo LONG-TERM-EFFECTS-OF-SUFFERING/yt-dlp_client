@@ -88,12 +88,11 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
             channel_downloaded_index = shared_channels.index(channel_name)
         except ValueError:
             # Si el canal no está en la lista, lo agregamos
-            if channel_name not in shared_channels:
-                shared_channels.append(channel_name)
-            channel_downloaded_index = len(shared_videos) - 1
-        
-        # downloaded_videos[channel_downloaded_index] = video
-        shared_videos.append(video)
+            shared_channels.append(channel_name)
+            shared_videos.append(manager.list())
+            channel_downloaded_index = len(shared_channels) - 1
+
+        shared_videos[channel_downloaded_index].append(video)
 
 def download_video(url: str) -> None:
     """
@@ -155,8 +154,7 @@ def main(NUM_PROCESS_PARAMETER: int = 8):
     print(f"Tiempo de ejecución con multiprocessing first part: {end2 - start2}")
 
     copyChannels = list(shared_channels)
-    copyVideos = list(shared_videos)
-    print(f"Total de audios descargados {len(copyVideos)}")
+    copyVideos = [list(video) for video in shared_videos]
     new_content = {
         "channels": copyChannels,
         "videos": copyVideos

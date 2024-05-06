@@ -125,17 +125,23 @@ def download_video(url: str) -> None:
 # ---------------------------------------------------------------------------- #
 
 def main(NUM_MAX_WORKERS: int = 4):
+	start1 = timeit.default_timer()
 	with concurrent.futures.ThreadPoolExecutor(NUM_MAX_WORKERS) as executor:
 			futures = [executor.submit(get_latest_videos, channel) for channel in to_download_channels]
 			for future in futures:
 					to_download_videos.extend(future.result())
+	end1 = timeit.default_timer()
+	print(f"Time to get latest videos: {end1 - start1} seconds")
 
 	print(f"Lenght of to_download_videos: {len(to_download_videos)}")
 
+	start2 = timeit.default_timer()
 	with concurrent.futures.ThreadPoolExecutor(NUM_MAX_WORKERS) as executor:
 			futures = [executor.submit(download_video, url) for url in to_download_videos]
 			for future in futures:
 					future.result()
+	end2 = timeit.default_timer()
+	print(f"Time to download videos: {end2 - start2} seconds")
 
 	new_content = {
 		"channels": downloaded_channels,
@@ -149,8 +155,8 @@ def main(NUM_MAX_WORKERS: int = 4):
 		"channels": []
 	}
 
-	# with open("to_download.json", "w") as file:
-		# json.dump(new_content, file, indent=4)
+	with open("to_download.json", "w") as file:
+		json.dump(new_content, file, indent=4)
 
 
 if __name__ == "__main__":

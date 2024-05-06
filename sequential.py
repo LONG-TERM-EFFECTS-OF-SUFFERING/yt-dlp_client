@@ -122,7 +122,7 @@ def main():
 	for channel in to_download_channels:
 		to_download_videos.extend(get_latest_videos(channel))
 	end1 = timeit.default_timer()
-	print(f"Tiempo de ejecución de la descarga de videos: {end1 - start1}")
+	print(f"Tiempo de ejecución de obtener los videos: {end1 - start1}")
 
 	start2 = timeit.default_timer()
 	for video_url in to_download_videos:

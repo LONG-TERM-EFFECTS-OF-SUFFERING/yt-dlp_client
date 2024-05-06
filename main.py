@@ -15,8 +15,10 @@ def clean_screen():
 def execute_and_time(function, name):
 		clean_screen()
 		print(f"You've chosen {name} option.\n")
+		start = timeit.default_timer()
 		function()
-		print(f"Downloading of videos in {name} mode was completed. \n")
+		end = timeit.default_timer()
+		print(f"Downloading of videos in {name} mode was completed. \nThe total time taken was {end - start} seconds.")
 
 def get_thread_count():
 		while True:

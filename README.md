@@ -25,3 +25,5 @@ This project aims to automate the process of downloading videos from YouTube usi
 3. Define the channels from which you want to download the last five videos in the `to_download.json` file.
 
 4. Run any version of the program: `python <multiprocess.py, multithreading.py or squential.py>`.
+
+Also you can run the main script: `python main.py`.

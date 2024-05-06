@@ -31,7 +31,8 @@ def load_json_file(file_name: str) -> dict:
 to_download_channels = load_json_file("to_download.json")["channels"]
 to_download_videos = []
 manager = Manager()
-# downloaded_videos = manager.list()
+shared_channels = manager.list()
+shared_videos = manager.list()
 lock = Lock() # Create a lock for synchronization
 
 # ---------------------------------------------------------------------------- #
@@ -82,30 +83,19 @@ def register_video(is_from_new_channel: bool, channel_name: str, video_title: st
         "download_date": datetime.now().strftime("%Y-%m-%d")
     }
 
-    try:
-        with lock:
-            if is_from_new_channel:
-                downloaded_channels.append(channel_name)
-                channel_downloaded_index = len(downloaded_channels) - 1
-            else:
-                channel_downloaded_index = downloaded_channels.index(channel_name)
-
-            downloaded_videos[channel_downloaded_index].append(video)
-            print(f"downloaded_videos1 {downloaded_videos}")
-    except Exception as e:
-        print(f"Error registering video: {e}")
-    print(f"downloaded_videos2 {downloaded_videos}")
-    # with lock:
-    #     try:
-    #         channel_downloaded_index = downloaded_channels.index(channel_name)
-    #     except ValueError:
-    #         # Si el canal no está en la lista, lo agregamos
-    #         downloaded_channels.append(channel_name)
-    #         downloaded_videos.append([])
-    #         channel_downloaded_index = len(downloaded_channels) - 1
+    with lock:
+        try:
+            channel_downloaded_index = downloaded_channels.index(channel_name)
+        except ValueError:
+            # Si el canal no está en la lista, lo agregamos
+            downloaded_channels.append(channel_name)
+            if channel_name not in shared_channels:
+                shared_channels.append(channel_name)
+            downloaded_videos.append([])
+            channel_downloaded_index = len(downloaded_channels) - 1
         
-    #     downloaded_videos[channel_downloaded_index].append(video)
-    #     print(f"downloaded_videos {downloaded_videos}")
+        downloaded_videos[channel_downloaded_index] = video
+        shared_videos.append(video)
 
 def download_video(url: str) -> None:
     """
@@ -121,31 +111,31 @@ def download_video(url: str) -> None:
     # Ejecuta yt-dlp para obtener información sobre el video
     command_output = os.popen(f"{yt_dlp_executable} --no-warnings --dump-json \"{url}\"").read()
 
-    # if command_output.strip():
-    #     try:
-    is_from_new_channel = False
-    video_information = json.loads(command_output)
-    channel = video_information["channel"]
-    title = video_information["title"]
-    upload_date = video_information["upload_date"]
+    if command_output.strip():
+        try:
+            is_from_new_channel = False
+            video_information = json.loads(command_output)
+            channel = video_information["channel"]
+            title = video_information["title"]
+            upload_date = video_information["upload_date"]
 
-    channel_folder_name = channel.replace(" ", "_")
-    path = f"downloads/{channel_folder_name}"
+            channel_folder_name = channel.replace(" ", "_")
+            path = f"downloads/{channel_folder_name}"
 
-    if not os.path.exists(path):  # Check if directory exists before creating
-        with lock:  # Use lock to ensure synchronization
-            os.makedirs(path)
-        is_from_new_channel = True
+            if not os.path.exists(path):  # Check if directory exists before creating
+                with lock:  # Use lock to ensure synchronization
+                    os.makedirs(path)
+                is_from_new_channel = True
 
-    file_name = f"{title}-{upload_date}"
-    os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
+            file_name = f"{title}-{upload_date}"
+            os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
 
-    register_video(is_from_new_channel, channel, title, upload_date)
+            register_video(is_from_new_channel, channel, title, upload_date)
 
-        # except json.decoder.JSONDecodeError:
-        #     print(f"Error: No se pudo decodificar la salida JSON para la URL: {url}")
-        # except Exception as e:
-        #     print(f"Error desconocido al procesar la URL {url}: {e}")
+        except json.decoder.JSONDecodeError:
+            print(f"Error: No se pudo decodificar la salida JSON para la URL: {url}")
+        except Exception as e:
+            print(f"Error desconocido al procesar la URL {url}: {e}")
 
 # ---------------------------------------------------------------------------- #
 
@@ -166,14 +156,11 @@ def main(NUM_PROCESS_PARAMETER: int = 8):
     end2 = timeit.default_timer()
     print(f"Tiempo de ejecución con multiprocessing first part: {end2 - start2}")
 
-    # Copiar la lista compartida a una lista estándar antes de serializarla a JSON
-    # downloaded_videos_copy = list(downloaded_videos)
-    downloaded_videos_copy = downloaded_videos
-
-    print(downloaded_videos)
+    copyChannels = list(shared_channels)
+    copyVideos = list(shared_videos)
     new_content = {
-        "channels": downloaded_channels,
-        "videos": downloaded_videos_copy
+        "channels": copyChannels,
+        "videos": copyVideos
     }
 
     with open("downloaded.json", "w") as file:

@@ -1,7 +1,7 @@
 import json
 import os
-from datetime import datetime
 import timeit
+from datetime import datetime
 
 
 class NoVideosFoundError(Exception):
@@ -21,13 +21,13 @@ def load_json_file(file_name: str) -> dict:
 	Returns:
 		dict: the content of the JSON file as a dictionary.
 	"""
-	with open(file_name, 'r') as file:
+	with open(f"{file_name}.json", 'r') as file:
 		file_content = json.load(file)
 		return file_content
 
 
-(downloaded_channels, downloaded_videos) = (load_json_file("downloaded.json")["channels"], load_json_file("downloaded.json")["videos"])
-to_download_channels = load_json_file("to_download.json")["channels"]
+(downloaded_channels, downloaded_videos) = (load_json_file("downloaded")["channels"], load_json_file("downloaded")["videos"])
+to_download_channels = load_json_file("to_download")["channels"]
 to_download_videos = []
 
 # ---------------------------------------------------------------------------- #
@@ -103,32 +103,31 @@ def download_video(url: str) -> None:
 	title = video_information["title"]
 	upload_date = video_information["upload_date"]
 
-	channel_folder_name = channel.replace(" ", "_")
-	path = f"downloads/{channel_folder_name}"
+	path = f"downloads/{channel.replace(" ", "_")}"
 
 	if not channel in downloaded_channels: # os.path.exists(path)
 		is_from_new_channel = True
-		os.makedirs(path, exist_ok=True)
+		os.makedirs(path)
 
 	file_name = f"{title}-{upload_date}"
-	os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"").read()
+	os.popen(f"{yt_dlp_executable} --output \"{file_name}\" --no-warnings --extract-audio --audio-format mp3 --paths {path} \"{url}\"")
 
 	register_video(is_from_new_channel, channel, title, upload_date)
 
 # ---------------------------------------------------------------------------- #
 
 def main():
-	start1 = timeit.default_timer()
+	start = timeit.default_timer()
 	for channel in to_download_channels:
 		to_download_videos.extend(get_latest_videos(channel))
-	end1 = timeit.default_timer()
-	print(f"Tiempo de ejecución de obtener los videos: {end1 - start1}")
+	end = timeit.default_timer()
+	print(f"Time to get the videos: {end - start}")
 
-	start2 = timeit.default_timer()
+	start = timeit.default_timer()
 	for video_url in to_download_videos:
 		download_video(video_url)
-	end2 = timeit.default_timer()
-	print(f"Tiempo de ejecución de la descarga de videos: {end2 - start2}")
+	end = timeit.default_timer()
+	print(f"Time to download the videos: {end - start}")
 
 	new_content = {
 		"channels": downloaded_channels,
@@ -147,7 +146,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # start = timeit.default_timer()
-    main()
-    # end = timeit.default_timer()
-    # print(f"Tiempo de ejecución secuencial : {end - start}")
+	main()
